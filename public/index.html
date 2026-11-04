@@ -579,8 +579,8 @@ if (res.entries.length >= 6) {
         res.treatments.forEach(tr=>{const a=(nw-tr.timestamp)/60000;if(a>=0&&a<240)iob+=tr.insulin*(1-a/240)});
         document.getElementById('iob').innerText=iob.toFixed(1)+' J';
 
-        const ip=gtr.filter(tr=>tr.insulin>0).map(tr=>{let c={sgv:100};if(entries.length)c=entries.reduce((p,cu)=>Math.abs(cu.date-tr.timestamp)<Math.abs(p.date-tr.timestamp)?cu:p);return{x:tr.timestamp,y:c.sgv,val:tr.insulin}});
-        const cp=gtr.filter(tr=>tr.carbs>0).map(tr=>{let c={sgv:100};if(entries.length)c=entries.reduce((p,cu)=>Math.abs(cu.date-tr.timestamp)<Math.abs(p.date-tr.timestamp)?cu:p);return{x:tr.timestamp,y:c.sgv,val:tr.carbs}});
+        const ip=gtr.filter(tr=>tr.insulin>0).map(tr=>{let c={sgv:100};if(entries.length)c=entries.reduce((p,cu)=>Math.abs(cu.date-tr.timestamp)<Math.abs(p.date-tr.timestamp)?cu:p);return{x:tr.timestamp,y:c.sgv,val:tr.insulin,id:tr.id}});
+        const cp=gtr.filter(tr=>tr.carbs>0).map(tr=>{let c={sgv:100};if(entries.length)c=entries.reduce((p,cu)=>Math.abs(cu.date-tr.timestamp)<Math.abs(p.date-tr.timestamp)?cu:p);return{x:tr.timestamp,y:c.sgv,val:tr.carbs,id:tr.id}});
         const sd=entries.map(e=>({x:e.date,y:e.sgv}));
         let mds = {label:'SGV', data:sd, datalabels:{display:false}};
         if(ctype==='dots'){mds.showLine=false; mds.pointRadius=4; mds.pointBackgroundColor=ctx=>{const v=ctx.raw?.y;return dc(v||100)}; mds.pointBorderColor='transparent';}
@@ -637,7 +637,7 @@ if (res.entries.length >= 6) {
                         const pt=ds[em.datasetIndex].data[em.index];
                         const ts=new Date(pt.x).toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit'});
                         const v=dl==='Ins'?pt.val+'J':pt.val+'g';
-                        if(confirm('Usunąć '+v+' z '+ts+'?')){try{const r=await fetch('/dane/api/treatments/'+pt.x,{method:'DELETE'});if(r.ok)li()}catch(e){}}
+                        if(confirm('Usunąć '+v+' z '+ts+'?')){try{const r=await fetch('/dane/api/treatments/'+encodeURIComponent(pt.id),{method:'DELETE'});if(r.ok)li()}catch(e){}}
                     }
                 },
                 plugins:{legend:{display:false},datalabels:{clip:false},tooltip:{backgroundColor:t.c1,titleColor:t.t4,bodyColor:t.t1,borderColor:t.sep,borderWidth:1,bodyFont:{size:11,weight:'bold'},padding:8,cornerRadius:6,callbacks:{label:ctx=>{if(ctx.dataset.label==='Ins')return ctx.raw.val+'J';if(ctx.dataset.label==='Carb')return ctx.raw.val+'g';return ctx.raw.y}}},zoom:{pan:{enabled:true,mode:'x',onPan:({chart})=>lm(chart)},zoom:{pinch:{enabled:true},wheel:{enabled:true},mode:'x',onZoom:({chart})=>lm(chart)}}},

@@ -1,43 +1,52 @@
-# xDrip CGM — Android / Termux
+# CGM Unified Monitor 3
 
-Wersja uruchamiana w całości lokalnie na telefonie z Androidem. Frontend zachowuje interfejs z repozytorium `xdrip-backup`, a backend pobiera odczyty i terapie z API Nightscout. MongoDB nie jest wymagane.
+Scalona wersja oparta na dwóch źródłach:
+- `xdrip-backup`: oryginalny interfejs xDrip Monitor i jego funkcje analityczne.
+- `xdrip-monitor-ns`: backend obsługujący bezpośrednio istniejącą bazę MongoDB Nightscout.
 
-## Wymagania
-- Android 7 lub nowszy
-- Termux z F-Droid lub oficjalnego GitHub: https://github.com/termux/termux-app
-- Dostępny adres serwera Nightscout
+Repozytorium Androidowego/proot `cgm` nie jest źródłem kodu tej wersji.
 
-## Instalacja w Termux
+## Co zawiera
+
+- Oryginalny, rozbudowany interfejs z `xdrip-monitor-ns/public/index.html`.
+- Poprawkę usuwania ręcznych wpisów po MongoDB ObjectId.
+- Backend Express z endpointami:
+  - `GET /health`
+  - `GET /dane`
+  - `GET /dane/api/data?hours=72`
+  - `GET /dane/api/treemap`
+  - `POST /dane/api/treatments`
+  - `DELETE /dane/api/treatments/:id`
+- Deduplikację rozpoznanej pary LibreView CSV / Bolus (Odzyskany) tylko w odpowiedzi API.
+- Usuwanie wyłącznie ręcznych wpisów oznaczonych przez tę aplikację.
+
+## Baza danych — WAŻNE
+
+Aplikacja nie tworzy, nie czyści, nie migruje i nie usuwa baz ani dokumentów.
+Domyślna nazwa bazy to `nightscout`, zgodnie z repozytorium `xdrip-monitor-ns`.
+Jeśli rzeczywista baza Nightscout na serwerze ma inną nazwę, ustaw właściwą wartość `MONGODB_DB` w pliku `.env`.
+Nie zakładaj automatycznie, że baza nazywa się `cgm` albo `dane`.
+
+## Instalacja
 
 ```bash
-pkg update -y && pkg upgrade -y
-pkg install -y git nodejs-lts
-git clone https://github.com/MagiCyt-Michasio/cgm.git
-cd cgm
 npm install
 cp .env.example .env
 nano .env
-```
-
-Ustaw w `.env`:
-- `NIGHTSCOUT_URL` — pełny adres Nightscout, np. `https://moja-domena.example`
-- `API_SECRET` — API Secret Nightscout, jeśli jest wymagany (backend wysyła SHA-1 w nagłówku `api-secret`).
-
-Następnie:
-
-```bash
-npm run check
+npm test
 npm start
 ```
 
-Otwórz w przeglądarce telefonu: http://127.0.0.1:3050/dane
+Panel: `http://127.0.0.1:3050/dane`
+Kontrola: `http://127.0.0.1:3050/health`
 
-## Dane i bezpieczeństwo
-- Odczyty CGM i terapie są pobierane z API Nightscout.
-- Ręcznie dodane wpisy są przechowywane lokalnie w `data/treatments.json`.
-- Usuwanie dotyczy wyłącznie wpisów lokalnych. Wpisów pobranych z Nightscout aplikacja nie usuwa.
-- Nie udostępniaj portu na zewnątrz. Serwer nasłuchuje tylko na `127.0.0.1`.
-- Kopia lokalnych wpisów: `cp data/treatments.json data/treatments.backup.json`.
+Domyślnie serwer nasłuchuje tylko na loopback. Do publicznego dostępu użyj Nginx/Cloudflare Tunnel i zabezpiecz domenę Cloudflare Access lub innym uwierzytelnianiem. Nie wystawiaj portu aplikacji bezpośrednio do Internetu.
 
-## Ważne
-To nie jest serwer Nightscout ani kopia bazy MongoDB. Telefon łączy się z istniejącym Nightscout przez HTTP API. Gdy telefon nie ma internetu albo Nightscout jest niedostępny, nie pojawią się nowe dane.
+## Dane LibreView CSV
+
+Importer CSV nie został automatycznie przeniesiony ze starego skryptu `migrate.js`: tamten skrypt aktualizuje dokumenty w kolekcji `entries` na podstawie konkretnych polskich nazw kolumn i nie jest bezpiecznym, uniwersalnym importerem. Importer zostanie dodany po sprawdzeniu rzeczywistego, połączonego pliku CSV i ustaleniu mapowania pól.
+
+## Źródła
+
+- https://github.com/MagiCyt-Michasio/xdrip-backup
+- https://github.com/MagiCyt-Michasio/xdrip-monitor-ns
